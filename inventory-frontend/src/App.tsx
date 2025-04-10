@@ -16,9 +16,13 @@ const App: React.FC = () => {
   useEffect(() => {
     const fetchInventory = async () => {
       try {
+        console.log('Fetching inventory from https://localhost:5001/api/inventory');
         const response = await fetch('https://localhost:5001/api/inventory');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
+        console.log('Fetched inventory:', data);
         setInventory(data);
       } catch (error) {
         console.error('Failed to fetch inventory:', error);
@@ -29,7 +33,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const newConnection = new signalR.HubConnectionBuilder()
-      .withUrl('https://localhost:5001/inventoryHub')
+      .withUrl('https://localhost:5001/InventoryHub')
       .withAutomaticReconnect()
       .build();
 
@@ -42,6 +46,7 @@ const App: React.FC = () => {
         .then(() => {
           console.log('Connected to SignalR');
           connection.on('ReceiveInventoryUpdate', (item: InventoryItem) => {
+            console.log('Received SignalR update:', item);
             setInventory(prev => {
               const updated = [...prev];
               const index = updated.findIndex(i => i.id === item.id);
@@ -75,14 +80,20 @@ const App: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {inventory.map(item => (
-            <tr key={item.id}>
-              <td>{item.id}</td>
-              <td>{item.name}</td>
-              <td>{item.quantity}</td>
-              <td>{new Date(item.lastUpdated).toLocaleString()}</td>
+          {inventory.length === 0 ? (
+            <tr>
+              <td colSpan={4}>No data available</td>
             </tr>
-          ))}
+          ) : (
+            inventory.map(item => (
+              <tr key={item.id}>
+                <td>{item.id}</td>
+                <td>{item.name}</td>
+                <td>{item.quantity}</td>
+                <td>{new Date(item.lastUpdated).toLocaleString()}</td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>
